@@ -1,44 +1,62 @@
 const std = @import("std");
-const Allocator = std.mem.Allocator;
-const List = std.ArrayList;
-const Map = std.AutoHashMap;
-const StrMap = std.StringHashMap;
-const BitSet = std.DynamicBitSet;
-const Str = []const u8;
-
 const util = @import("util.zig");
+
 const gpa = util.gpa;
+const parseInt = std.fmt.parseInt;
+const print = std.debug.print;
+const assert = std.debug.assert;
 
 const data = @embedFile("../data/day01.txt");
 
 pub fn main() !void {
+    // Parse input into depthList
+    comptime var depthList: []const u32 = &[_]u32{};
+    comptime {
+        @setEvalBranchQuota(10000000);
+        var it = std.mem.tokenize(u8, data, "\n");
+        while (it.next()) |line| {
+            if (line.len == 0) continue;
+            const depth = try parseInt(u32, line, 10);
+            depthList = depthList ++ [_]u32{depth};
+        }
+    }
 
+    // Part 1
+    const increases = comptime calculateDepthChanges(1, depthList);
+    const result1 = comptime std.fmt.comptimePrint("There are {} depth increases\n", .{increases});
+    print(result1, .{});
+
+    // Part 2
+    const increases_ranges = comptime calculateDepthChanges(3, depthList);
+    const result2 = comptime std.fmt.comptimePrint("There are {} depth range increases\n", .{increases_ranges});
+    print(result2, .{});
 }
 
-// Useful stdlib functions
-const tokenize = std.mem.tokenize;
-const split = std.mem.split;
-const indexOf = std.mem.indexOfScalar;
-const indexOfAny = std.mem.indexOfAny;
-const indexOfStr = std.mem.indexOfPosLinear;
-const lastIndexOf = std.mem.lastIndexOfScalar;
-const lastIndexOfAny = std.mem.lastIndexOfAny;
-const lastIndexOfStr = std.mem.lastIndexOfLinear;
-const trim = std.mem.trim;
-const sliceMin = std.mem.min;
-const sliceMax = std.mem.max;
+fn calculateDepthChanges(comptime windowSize: u32, items: []const u32) u32 {
+    var increases: u32 = 0;
+    var last_depth = sum(windowSize, items[0..]);
 
-const parseInt = std.fmt.parseInt;
-const parseFloat = std.fmt.parseFloat;
+    var i: u32 = 0;
+    while (i <= items.len - windowSize) : (i += 1) {
+        var depth = sum(windowSize, items[i..]);
+        if (depth > last_depth) {
+            increases += 1;
+        }
 
-const min = std.math.min;
-const min3 = std.math.min3;
-const max = std.math.max;
-const max3 = std.math.max3;
+        last_depth = depth;
+    }
 
-const print = std.debug.print;
-const assert = std.debug.assert;
+    return increases;
+}
 
-const sort = std.sort.sort;
-const asc = std.sort.asc;
-const desc = std.sort.desc;
+fn sum(comptime windowSize: u32, items: []const u32) u32 {
+    assert(items.len >= windowSize);
+
+    var total: u32 = 0;
+    comptime var i: u32 = 0;
+    inline while (i < windowSize) : (i += 1) {
+        total += items[i];
+    }
+
+    return total;
+}
