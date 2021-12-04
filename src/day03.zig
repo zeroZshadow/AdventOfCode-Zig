@@ -10,9 +10,40 @@ const util = @import("util.zig");
 const gpa = util.gpa;
 
 const data = @embedFile("../data/day03.txt");
+const inputType = u12;
 
 pub fn main() !void {
-    
+    // Parse input
+    var inputList: List(inputType) = List(inputType).init(gpa);
+    defer inputList.deinit();
+    var it = std.mem.tokenize(u8, data, "\n");
+    while (it.next()) |line| {
+        if (line.len == 0) continue;
+        const input = try parseInt(inputType, line, 2);
+        try inputList.append(input);
+    }
+    assert(inputList.items[0] == 2093);
+
+    // Part 1 gamma
+    var gammaCounter: [12]usize = [_]usize{0} ** 12;
+    var gammaThreshold = inputList.items.len / 2;
+    for (inputList.items) |input| {
+        var i: u4 = 0;
+        while (i< @typeInfo(inputType).Int.bits) : (i+=1) {
+            gammaCounter[i] += (input >> i) & 1;
+        }
+    }
+
+    var gamma: inputType = 0;
+    var i: u4 = 0;
+    while (i < @typeInfo(inputType).Int.bits) : (i+=1) {
+        if (gammaCounter[i] >= gammaThreshold){
+            gamma = gamma | (@as(inputType, 1) << i);
+        }
+    }
+    assert(gamma == 1337);
+    const result = @as(u32, gamma) * @as(u32, ~gamma);
+    print("Gamma {} Epsilon {} Result {}\n", .{gamma, ~gamma, result});
 }
 
 // Useful stdlib functions
