@@ -4,7 +4,9 @@ const List = std.ArrayList;
 const Map = std.AutoHashMap;
 const StrMap = std.StringHashMap;
 const BitSet = std.DynamicBitSet;
-const Str = []const u8;
+const parseInt = std.fmt.parseInt;
+const tokenize = std.mem.tokenize;
+const split = std.mem.split;
 
 const util = @import("util.zig");
 const gpa = util.gpa;
@@ -12,33 +14,71 @@ const gpa = util.gpa;
 const data = @embedFile("../data/day02.txt");
 
 pub fn main() !void {
-    
+    var instructions = std.ArrayList(Instruction).init(gpa);
+    defer instructions.deinit();
+
+    var lineIterator = std.mem.tokenize(u8, data, "\n");
+    while (lineIterator.next()) |line| {
+        if (line.len == 0) continue;
+        var parts = std.mem.split(u8, line, " ");
+        const command = parts.next().?;
+        const distance = try parseInt(u32, parts.next().?, 10);
+
+        const instruction = Instruction{ .direction = switch (command[0]) {
+            'f' => .Forward,
+            'u' => .Up,
+            'd' => .Down,
+            else => unreachable,
+        }, .distance = distance };
+
+        try instructions.append(instruction);
+    }
+
+    // Part 1
+    var submarine = Submarine.init();
+    for (instructions.items) |inst| {
+        switch (inst.direction) {
+            .Forward => submarine.MoveForward(inst.distance),
+            .Up => submarine.MoveUp(inst.distance),
+            .Down => submarine.MoveDown(inst.distance),
+        }
+    }
+
+    const result = submarine.depth * submarine.distance;
+    std.debug.assert(result == 2187380);
+    std.debug.print("Submarine value {}\n", .{result});
+
+    // Part 2
 }
 
-// Useful stdlib functions
-const tokenize = std.mem.tokenize;
-const split = std.mem.split;
-const indexOf = std.mem.indexOfScalar;
-const indexOfAny = std.mem.indexOfAny;
-const indexOfStr = std.mem.indexOfPosLinear;
-const lastIndexOf = std.mem.lastIndexOfScalar;
-const lastIndexOfAny = std.mem.lastIndexOfAny;
-const lastIndexOfStr = std.mem.lastIndexOfLinear;
-const trim = std.mem.trim;
-const sliceMin = std.mem.min;
-const sliceMax = std.mem.max;
+const Direction = enum { Forward, Down, Up };
 
-const parseInt = std.fmt.parseInt;
-const parseFloat = std.fmt.parseFloat;
+const Instruction = struct { direction: Direction, distance: usize };
 
-const min = std.math.min;
-const min3 = std.math.min3;
-const max = std.math.max;
-const max3 = std.math.max3;
+const Submarine = struct {
+    const Self = @This();
 
-const print = std.debug.print;
-const assert = std.debug.assert;
+    distance: usize = 0,
+    depth: usize = 0,
+    aim: i64 = 0,
 
-const sort = std.sort.sort;
-const asc = std.sort.asc;
-const desc = std.sort.desc;
+    pub fn init() Submarine {
+        return Submarine{
+            .distance = 0,
+            .depth = 0,
+            .aim = 0,
+        };
+    }
+
+    pub fn MoveForward(this: *Self, distance: usize) void {
+        this.distance += distance;
+    }
+
+    pub fn MoveUp(this: *Self, distance: usize) void {
+        this.depth -= distance;
+    }
+
+    pub fn MoveDown(this: *Self, distance: usize) void {
+        this.depth += distance;
+    }
+};
