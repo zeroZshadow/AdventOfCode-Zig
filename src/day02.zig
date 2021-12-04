@@ -17,6 +17,7 @@ pub fn main() !void {
     var instructions = std.ArrayList(Instruction).init(gpa);
     defer instructions.deinit();
 
+    // Parse input into instruction list
     var lineIterator = std.mem.tokenize(u8, data, "\n");
     while (lineIterator.next()) |line| {
         if (line.len == 0) continue;
@@ -34,7 +35,7 @@ pub fn main() !void {
         try instructions.append(instruction);
     }
 
-    // Part 1
+    // Act on instructions
     var submarine = Submarine.init();
     for (instructions.items) |inst| {
         switch (inst.direction) {
@@ -44,11 +45,15 @@ pub fn main() !void {
         }
     }
 
-    const result = submarine.depth * submarine.distance;
-    std.debug.assert(result == 2187380);
-    std.debug.print("Submarine value {}\n", .{result});
+    // Part1
+    const resultPart1 = submarine.aim * submarine.distance;
+    std.debug.assert(resultPart1 == 2187380);
+    std.debug.print("Submarine value1 {}\n", .{resultPart1});
 
     // Part 2
+    const resultPart2 = submarine.depth * submarine.distance;
+    std.debug.assert(result == 2086357770);
+    std.debug.print("Submarine value2 {}\n", .{resultPart2});
 }
 
 const Direction = enum { Forward, Down, Up };
@@ -60,7 +65,7 @@ const Submarine = struct {
 
     distance: usize = 0,
     depth: usize = 0,
-    aim: i64 = 0,
+    aim: usize = 0,
 
     pub fn init() Submarine {
         return Submarine{
@@ -72,13 +77,14 @@ const Submarine = struct {
 
     pub fn MoveForward(this: *Self, distance: usize) void {
         this.distance += distance;
+        this.depth += this.aim * distance;
     }
 
     pub fn MoveUp(this: *Self, distance: usize) void {
-        this.depth -= distance;
+        this.aim -= distance;
     }
 
     pub fn MoveDown(this: *Self, distance: usize) void {
-        this.depth += distance;
+        this.aim += distance;
     }
 };
